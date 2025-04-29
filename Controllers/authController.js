@@ -1,18 +1,20 @@
- //import files
- const {userModel} = require('../Models/userModel');
- const {addressModel} = require('../Models/addressModel');
- const {countryModel} = require('../Models/countryModel');
- const {useraddressModel} = require('../Models/useraddressModel');
+//import files
+const {userModel} = require('../Models/userModel');
+const {addressModel} = require('../Models/addressModel');
+const {countryModel} = require('../Models/countryModel');
+const {useraddressModel} = require('../Models/useraddressModel');
+const {sendVerificationEmail} = require('../utils/email');
 
- // import packages
- const bcrypt = require('bcrypt');
+// import packages
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
-// Show registration form
+// ************************ Show registration form ************************
  async function userregistershow(req,resp){
     await resp.status(200).send({message:'Show Register.'});
 }
 
-// Register user
+// ************************ Register user ************************
 async function userregister(req, resp){
     try{
         const {
@@ -72,12 +74,13 @@ async function userregister(req, resp){
 
         // Associate user and address
         const useraddress = await useraddressModel.create({
-            user_id: user._id,
+            user_id: newuser._id,
             address_id: address._id
         });
         
         // Send Verifiction Email
-        await sendVerificationEmail(newuser);
+        sendVerificationEmail(newuser);
+
         // Respond with success
         return resp.status(201).json({
             success: true,
@@ -93,12 +96,46 @@ async function userregister(req, resp){
   }
 }
 
+//************************ Verify Email ************************
+async function verifyEmail(req,resp){
+    try{ 
+        const {token} = req.query;
+
+        // check for verification token
+        if(!token){
+            return res.status(400).json({ success: false, message: 'Verification token missing.' });
+        }
+
+        const {id} = jwt.verify(token, process.env.EMAIL_SECRET_KEY);
+        
+        // Check user existance in the database
+        const user = await userModel.findById(id);
+       
+        if(!user){
+            return resp.status(401).json({
+            success: false,
+            message:`User not found.`
+            })
+        }
+        user.isVerified = true;
+        await user.save();
+        resp.status(200).json({ success: true, message: 'Email verified successfully.' });
+
+    }catch(error){
+        return resp.status(500).json({
+        message: `Internal Server Error.`,
+        error:error.message
+    });
+    }
+
+}
+
 //Show user login form
 async function showlogin(req,resp){
     return resp.send(`Show login form.`);
 }
 
-//Login user
+// ************************ Login user ************************
 async function login(req,resp){
     try{
     const{email, password} = req.body;
@@ -156,6 +193,7 @@ module.exports = {
     userregister,
     showlogin,
     login,
+    verifyEmail,
 }
 
 

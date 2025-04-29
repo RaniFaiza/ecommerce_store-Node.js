@@ -5,7 +5,7 @@ const {dbconn} = require('./config/dbconfig');
 const morgan = require('morgan');
 
 //import files
-const {userroutes} = require('./Routes/userroute');
+const {authroutes} = require('./Routes/authRoute');
 
 //dotenv config
 dotenv.config();
@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(morgan('dev'));
 
 //Routes
-app.use('/api/v1/user',userroutes);
+app.use('/api/v1/auth',authroutes);
 app.get('/', (req,resp)=>{
     resp.status(200).send("Welcome to E-commerce Store.");
 });
