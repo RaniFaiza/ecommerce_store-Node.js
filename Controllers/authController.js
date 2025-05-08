@@ -4,6 +4,7 @@ const {addressModel} = require('../Models/addressModel');
 const {countryModel} = require('../Models/countryModel');
 const {useraddressModel} = require('../Models/useraddressModel');
 const {sendVerificationEmail} = require('../utils/email');
+const agenda = require('../agenda/agenda');
 
 // import packages
 const bcrypt = require('bcrypt');
@@ -41,7 +42,7 @@ async function userregister(req, resp){
         // Check if user already exists
         const existinguser = await userModel.findOne({email});
         if(existinguser){
-            resp.status(409).json({
+            return resp.status(409).json({
                 success: true,
                 message:'Email already exists.'});
         }
@@ -77,10 +78,13 @@ async function userregister(req, resp){
             user_id: newuser._id,
             address_id: address._id
         });
-        
-        // Send Verifiction Email
-        sendVerificationEmail(newuser);
-
+        //  try{
+            // // Send Verifiction Email
+            //sendVerificationEmail(newuser);
+              await agenda.now('send verification email',{user:newuser});
+        //  } catch (emailError) {
+        //     console.error("Email sending failed:", emailError.message);
+        //  }
         // Respond with success
         return resp.status(201).json({
             success: true,

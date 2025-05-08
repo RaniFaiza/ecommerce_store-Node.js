@@ -5,10 +5,11 @@ const { response } = require('express');
 
 // ************************* Send verification email *************************
 async function sendVerificationEmail(user){
-    try{ 
+
         const token = await jwt.sign({id:user._id},process.env.EMAIL_SECRET_KEY, {expiresIn: '1d'});
         const link = `${process.env.BASE_URL}/api/v1/auth/verify-email/?token=${token}`
         
+        // create transporter
         const transport = nodemailer.createTransport({
             service:'gmail',
             auth:{
@@ -27,14 +28,7 @@ async function sendVerificationEmail(user){
                 <a href="${link}">Verify Email.</a>
                 <p>This link will expire in 24 hours.</p> `
         });
-        
-    }catch(error){
-        return resp.status(500).json({
-        success:'false',
-        message:`Internal Server Error`,
-        error:message.error
-        })
-     }
+        console.log(`Verification email sent to ${user.email}`);
 }
 
 module.exports = {sendVerificationEmail,}
