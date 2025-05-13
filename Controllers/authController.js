@@ -5,6 +5,7 @@ const {countryModel} = require('../Models/countryModel');
 const {useraddressModel} = require('../Models/useraddressModel');
 const {sendVerificationEmail} = require('../utils/email');
 const agenda = require('../agenda/agenda');
+const {customError} = require('../utils/customError');
 
 // import packages
 const bcrypt = require('bcrypt');
@@ -16,8 +17,8 @@ const jwt = require('jsonwebtoken');
 }
 
 // ************************ Register user ************************
-async function userregister(req, resp){
-    try{
+async function userregister(req, resp, next){
+    //try{
         const {
             name, email, phone, 
             password, street, town, 
@@ -34,9 +35,10 @@ async function userregister(req, resp){
         // Check if the country exists
         const iscountry = await countryModel.findOne({country_name:country});
         if(!iscountry){
-            return resp.status(404).json({
-                success: false,
-                message:`Country ${country} doesn't exist. `});  
+            // return resp.status(404).json({
+            //     success: false,
+            //     message:`Country ${country} doesn't exist. `});  
+            return next(new customError(`Country ${country} doesn't exist.`, 400))
         } 
            
         // Check if user already exists
@@ -91,13 +93,13 @@ async function userregister(req, resp){
             message:`User created scuccessfully. Verification Email sent.`
         })
 
-} catch(error){
-    console.error(`Registration Error: ${error}`);
-    return resp.status(500).json({
-        message: `Internal Server Error.`,
-        error:error.message
-    });
-  }
+// } catch(error){
+//     console.error(`Registration Error: ${error}`);
+//     return resp.status(500).json({
+//         message: `Internal Server Error.`,
+//         error:error.message
+//     });
+//   }
 }
 
 //************************ Verify Email ************************
