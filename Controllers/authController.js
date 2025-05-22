@@ -27,26 +27,19 @@ async function userregister(req, resp, next){
 
         // Validate required fields
         if(!name || !phone || !email || !password || !street || !country || !town){
-        return resp.status(400).json({
-            success: false,
-            message:'Provide all mandatory fields.'});
+            return next(new customError(`Provide all mandatory fields.`, 400))
         }
 
         // Check if the country exists
         const iscountry = await countryModel.findOne({country_name:country});
-        if(!iscountry){
-            // return resp.status(404).json({
-            //     success: false,
-            //     message:`Country ${country} doesn't exist. `});  
+        if(!iscountry){ 
             return next(new customError(`Country ${country} doesn't exist.`, 400))
         } 
            
         // Check if user already exists
         const existinguser = await userModel.findOne({email});
         if(existinguser){
-            return resp.status(409).json({
-                success: true,
-                message:'Email already exists.'});
+            return next(new customError(`Email already exists.`,409));
         }
         
         // Hash Password
@@ -62,9 +55,7 @@ async function userregister(req, resp, next){
         });
 
         if(!newuser){
-            return resp.status(500).json({
-                success: false,
-                message:`Error while creating user`});
+            return next(new customError(`Error while creating user.`,500))
         }
 
         // Create address
@@ -80,61 +71,48 @@ async function userregister(req, resp, next){
             user_id: newuser._id,
             address_id: address._id
         });
-        //  try{
+         try{
             // // Send Verifiction Email
             //sendVerificationEmail(newuser);
               await agenda.now('send verification email',{user:newuser});
-        //  } catch (emailError) {
-        //     console.error("Email sending failed:", emailError.message);
-        //  }
+              
+         } catch (emailError) {
+            console.error("Email sending failed:", emailError.message);
+         }
         // Respond with success
         return resp.status(201).json({
             success: true,
             message:`User created scuccessfully. Verification Email sent.`
         })
-
-// } catch(error){
-//     console.error(`Registration Error: ${error}`);
-//     return resp.status(500).json({
-//         message: `Internal Server Error.`,
-//         error:error.message
-//     });
-//   }
 }
 
 //************************ Verify Email ************************
 async function verifyEmail(req,resp){
-    try{ 
+
         const {token} = req.query;
 
         // check for verification token
         if(!token){
-            return res.status(400).json({ success: false, message: 'Verification token missing.' });
+            return next(new customError(`Verification token missing.`,400))
         }
 
+        //Extract user id
         const {id} = jwt.verify(token, process.env.EMAIL_SECRET_KEY);
         
         // Check user existance in the database
         const user = await userModel.findById(id);
        
         if(!user){
-            return resp.status(401).json({
-            success: false,
-            message:`User not found.`
-            })
+            return next(new customError(`User not found.`,401))       
         }
         user.isVerified = true;
+
         await user.save();
+        
         resp.status(200).json({ success: true, message: 'Email verified successfully.' });
 
-    }catch(error){
-        return resp.status(500).json({
-        message: `Internal Server Error.`,
-        error:error.message
-    });
-    }
-
 }
+
 
 //Show user login form
 async function showlogin(req,resp){
@@ -143,12 +121,12 @@ async function showlogin(req,resp){
 
 // ************************ Login user ************************
 async function login(req,resp){
-    try{
+
     const{email, password} = req.body;
 
     //Validate required fields
     if(!email || !password){
-        return resp.status(401).send(`Enter all mandatory fields.`);
+        return next(new customError(`Enter all mandatory fields.`,401));
     }
 
     //Check if user exists
@@ -160,10 +138,7 @@ async function login(req,resp){
         
         //Failure response
         if(!verifiedpassword){
-            return resp.status(401).send({
-                success:false,
-                message:`Email or Password incorrect. `
-            });
+            return next(customError(`Email or Password incorrect.`,401));
         }   
 
         //Generate Token using user instance
@@ -178,20 +153,7 @@ async function login(req,resp){
     }
 
     //Failure response if user doesn't exist
-    return resp.status(404).send({
-        success:true,
-        message:`Email or Password incorrect. .`
-    })
-
-    }catch(error){
-        console.error(`Error while login: ${error}`);
-        return resp.status(500).send({
-            success:false,
-            message: `Internal Server Error: ${error}`
-        })
-    }
-  
-
+    return next(customError(`Email or Password incorrect.`,401));
 }
 
 module.exports = {

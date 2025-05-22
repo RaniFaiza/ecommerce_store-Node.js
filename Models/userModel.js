@@ -31,9 +31,6 @@ userSchema.methods.generateToken = function (){
     return jwt.sign({id:this._id},process.env.SECRET_KEY,{expiresIn: '1d'});
 }
 
-const userModel = mongooseVar.model('users', userSchema);
-
-
 module.exports = {
     userModel
 }
