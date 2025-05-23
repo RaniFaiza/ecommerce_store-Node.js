@@ -41,16 +41,13 @@ async function userregister(req, resp, next){
         if(existinguser){
             return next(new customError(`Email already exists.`,409));
         }
-        
-        // Hash Password
-        const hashpassword = await bcrypt.hash(password,10);
 
         // Create user    
         const newuser = await userModel.create({
             name,
             phone,
             email,
-            password:hashpassword,
+            password,
             isVerified:false
         });
 
@@ -87,7 +84,7 @@ async function userregister(req, resp, next){
 }
 
 //************************ Verify Email ************************
-async function verifyEmail(req,resp){
+async function verifyEmail(req, resp, next){
 
         const {token} = req.query;
 
@@ -113,14 +110,13 @@ async function verifyEmail(req,resp){
 
 }
 
-
 //Show user login form
-async function showlogin(req,resp){
+async function showlogin(req, resp){
     return resp.send(`Show login form.`);
 }
 
 // ************************ Login user ************************
-async function login(req,resp){
+async function login(req, resp, next){
 
     const{email, password} = req.body;
 
@@ -130,7 +126,7 @@ async function login(req,resp){
     }
 
     //Check if user exists
-    const user = await userModel.findOne({email});
+    const user = await userModel.findOne({email}).select('+password');
 
     if(user){
         //Verify password

@@ -1,7 +1,6 @@
 // import package
 const nodemailer = require('nodemailer');
 const jwt = require('jsonwebtoken');
-const { response } = require('express');
 
 // ************************* Send verification email *************************
 async function sendVerificationEmail(user){
